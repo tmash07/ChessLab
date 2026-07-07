@@ -1,5 +1,7 @@
 import requests
-import time
+import chess.pgn
+import io
+from collections import Counter
 
 headers = {
     "User-Agent": "ChessLab (contact: tmashqbeh@gmail.com)"
@@ -27,25 +29,24 @@ def get_game_history(username, basetime, increment):
     else:
         api_error(response.status_code)
 
-def get_full_game_history(username):
+def get_player_archives(username):
     archives_url = "https://api.chess.com/pub/player/" + username + "/games/archives"
     archives_response = requests.get(archives_url, headers=headers)
     if archives_response.status_code != 200:
         api_error(archives_response.status_code)
         return
-    archives = archives_response.json()["archives"]
-    wins, draws, losses = 0, 0, 0
+    return archives_response.json()["archives"]
+
+def get_all_user_games(username):
+    archives = get_player_archives(username)
+    games_list = []
     for link in archives:
         response = requests.get(link, headers=headers)
         if response.status_code != 200:
             api_error(response.status_code)
             continue
-        games_list = response.json()["games"]
-        linkw, linkd, linkl = get_record(username, games_list)
-        wins += linkw
-        draws += linkd
-        losses += linkl
-    return wins, draws, losses
+        games_list.extend(response.json()["games"])
+    return games_list
     
 
 def get_record(username, games_list):
@@ -65,8 +66,39 @@ def get_record(username, games_list):
             print("Error: result code not recognized")
     return wins, draws, losses
 
-a, b, c = get_full_game_history("hikaru")
-print(f"Wins:{a}\n Draws:{b}\n Losses:{c}")
-
-
+def extract_opening_from_pgn(pgn_string):
+    if not pgn_string or not isinstance(pgn_string, str):
+        return "Unknown"
     
+    pgn_file = io.StringIO(pgn_string)
+    headers = chess.pgn.read_headers(pgn_file)
+
+    if headers is None:
+        return "Unknown"
+    
+    eco = headers.get("ECO", "Unknown")
+    return eco
+
+def top_10_openings(games_list):
+    counter = Counter()
+    for game in games_list:
+        pgn = game.get("pgn")
+        counter[extract_opening_from_pgn(pgn)] += 1
+
+    for opening, count in counter.most_common()[:10]:
+        print(f"{opening}: {count}")
+
+
+def get_player_analysis(username):
+    games = get_all_user_games(username)
+    
+    print(f"Total games analyzed: {len(games)}\n")
+
+    wins, draws, losses = get_record(username, games)
+
+    print(f"Wins: {wins}\n Draws: {draws}\n Losses: {losses}\n")
+
+    print("10 most common openings:")
+    top_10_openings(games)
+
+get_player_analysis("magnuscarlsen")
