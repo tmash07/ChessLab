@@ -1,11 +1,17 @@
 from collections import Counter
-from data.pgn import extract_opening_from_pgn
+from data.pgn import get_opening, get_headers_from_pgn
+from api.chesscom import JsonDict
 
-def top_10_openings(games_list):
+def top_10_openings(games_list: list[JsonDict]) -> Counter[str | None]:
     counter = Counter()
     for game in games_list:
         pgn = game.get("pgn")
-        counter[extract_opening_from_pgn(pgn)] += 1
+        if pgn is None:
+            continue
+        headers = get_headers_from_pgn(pgn)
+        if headers is None:
+            continue
+        else:
+            counter[get_opening(headers)] += 1
 
-    for opening, count in counter.most_common()[:10]:
-        print(f"{opening}: {count}")
+    return counter
