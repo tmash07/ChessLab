@@ -1,17 +1,9 @@
 from collections import Counter
 from data.pgn import get_opening, get_headers_from_pgn
-from api.chesscom import JsonDict
+from models.game import Game
 
-def top_10_openings(games_list: list[JsonDict]) -> Counter[str | None]:
+def count_openings(games_list: list[Game]) -> Counter[str | None]:
     counter = Counter()
     for game in games_list:
-        pgn = game.get("pgn")
-        if pgn is None:
-            continue
-        headers = get_headers_from_pgn(pgn)
-        if headers is None:
-            continue
-        else:
-            counter[get_opening(headers)] += 1
-
+        counter[game.eco] += 1
     return counter
