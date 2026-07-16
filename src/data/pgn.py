@@ -1,5 +1,6 @@
 import chess.pgn
 import io
+from typing import Any
 
 type Headers = chess.pgn.Headers
 
@@ -11,7 +12,7 @@ def get_headers_from_pgn(pgn_string: str) -> Headers | None:
     headers = chess.pgn.read_headers(pgn_file)
     return headers
 
-def get_pregame_ratings(headers: Headers) -> dict[str, int | None]:
+def get_ratings(headers: Headers) -> dict[str, int | None]:
     white_elo_raw = headers.get("WhiteElo", None)
     white_elo = int(white_elo_raw) if white_elo_raw is not None else None
     black_elo_raw = headers.get("BlackElo", None)
@@ -35,5 +36,41 @@ def get_user_color(username: str, headers: Headers) -> str | None:
 
 def get_opening(headers: Headers) -> str | None:
     return headers.get("ECO", None)
-    
 
+def get_date_and_time(headers: Headers) -> dict[str, str | None]:
+    date = headers.get("UTCDate", None)
+    time = headers.get("UTCTime", None)
+    return {"date": date, "time": time}
+    
+def get_winner(headers: Headers) -> str | None:
+    result = headers.get("Result", None)
+    if result is None:
+        print("No result found")
+        return None
+    if result == "0-1":
+        return "black"
+    elif result == "1-0":
+        return "white"
+    elif result == "1/2-1/2":
+        return "draw"
+    else:
+        print("Result cannot be parsed")
+        return None
+    
+def get_rating_information(headers: Headers) -> dict[str, Any]:
+    users = get_users(headers)
+    ratings = get_ratings(headers)
+    date_and_time = get_date_and_time(headers)
+
+    return {
+        "white": {
+            "user": users["white_user"],
+            "rating": ratings["white_elo"]
+        },
+        "black": {
+            "user": users["black_user"],
+            "rating": ratings["black_elo"]
+        },
+        "date": date_and_time["date"],
+        "time": date_and_time["time"]
+    }
