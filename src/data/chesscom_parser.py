@@ -3,11 +3,11 @@ from models.game import Game, GamePlayer
 from data.pgn import (
     get_headers_from_pgn, 
     get_rating_information, 
-    get_winner, 
     get_time_control, 
     get_opening
 )
 from typing import Any
+from api.chesscom import get_time_control_history, get_monthly_user_games
 
 def get_accuracies(game: JsonDict) -> dict[str, float | None] | None:
     return game.get("accuracies")
@@ -36,6 +36,8 @@ def is_rated(game: JsonDict) -> bool:
     return game["rated"]
 
 def build_game_from_chesscom(game: JsonDict) -> Game | None:
+    if game.get("pgn", None) is None:
+        return None
     headers = get_headers_from_pgn(game["pgn"])
     if headers is None:
         print("Headers not found")
@@ -75,5 +77,31 @@ def build_game_from_chesscom(game: JsonDict) -> Game | None:
         rated = rated
     )
 
+def build_gamelist_from_chesscom(raw_gamelist: list[JsonDict]) -> list[Game] | None:
+    games = []
+    for raw_game in raw_gamelist:
+        game = build_game_from_chesscom(raw_game)
+        if game is None:
+            continue
+        if game.rules != "chess":
+            continue
+        games.append(game)
+    return games
+
+def build_time_control_gamelist(username: str, basetime: str, increment: str) -> list[Game] | None:
+    raw_gamelist = get_time_control_history(username, basetime, increment)
+    if raw_gamelist is None:
+        return None
+    gamelist = build_gamelist_from_chesscom(raw_gamelist)
+    return gamelist
+
+def build_monthly_gamelist(username: str, year: str, month: str):
+    raw_gamelist = get_monthly_user_games(username, year, month)
+    if raw_gamelist is None:
+        return None
+    gamelist = build_gamelist_from_chesscom(raw_gamelist)
+    return gamelist
+
+        
 
 

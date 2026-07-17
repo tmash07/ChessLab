@@ -16,7 +16,6 @@ def get_player_analysis(username: str) -> None:
     print(f"Total games analyzed: {len(games)}\n")
 
     record = get_record(username, games)
-
     print(f"Wins: {record['wins']}\n Draws: {record['draws']}\n Losses: {record['losses']}\n")
 
     counter = count_openings(games)
