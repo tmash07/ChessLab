@@ -1,6 +1,7 @@
 import chess.pgn
 import io
 from typing import Any
+from datetime import datetime
 
 type Headers = chess.pgn.Headers
 
@@ -37,10 +38,12 @@ def get_user_color(username: str, headers: Headers) -> str | None:
 def get_opening(headers: Headers) -> str | None:
     return headers.get("ECO", None)
 
-def get_date_and_time(headers: Headers) -> dict[str, str | None]:
+def get_date_and_time(headers: Headers) -> datetime | None:
     date = headers.get("UTCDate", None)
     time = headers.get("UTCTime", None)
-    return {"date": date, "time": time}
+    if date is None or time is None:
+        return None
+    return datetime.strptime(date + " " + time, "%Y.%m.%d %H:%M:%S")
     
 def get_winner(headers: Headers) -> str | None:
     result = headers.get("Result", None)
@@ -60,7 +63,7 @@ def get_winner(headers: Headers) -> str | None:
 def get_rating_information(headers: Headers) -> dict[str, Any]:
     users = get_users(headers)
     ratings = get_ratings(headers)
-    date_and_time = get_date_and_time(headers)
+    datetime = get_date_and_time(headers)
 
     return {
         "white": {
@@ -71,6 +74,5 @@ def get_rating_information(headers: Headers) -> dict[str, Any]:
             "user": users["black_user"],
             "rating": ratings["black_elo"]
         },
-        "date": date_and_time["date"],
-        "time": date_and_time["time"]
+        "datetime": datetime
     }

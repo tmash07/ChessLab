@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 @dataclass
 class GamePlayer:
@@ -11,9 +12,9 @@ class GamePlayer:
 class Game:
     white: GamePlayer
     black: GamePlayer
-    date: str
-    time: str
-    time_control: str | None
+    played_at: datetime
+    basetime: int
+    increment: int
     eco: str | None
     url: str | None
     raw_pgn: str

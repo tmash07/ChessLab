@@ -1,4 +1,5 @@
 from data.chesscom_parser import build_monthly_gamelist
+
 def get_peak_monthly_rating(username: str, year: str, month: str) -> int | None:
     gamelist = build_monthly_gamelist(username, year, month)
     if gamelist is None:

@@ -9,6 +9,7 @@ from data.pgn import (
 from typing import Any
 from api.chesscom import get_time_control_history, get_monthly_user_games
 
+
 def get_accuracies(game: JsonDict) -> dict[str, float | None] | None:
     return game.get("accuracies")
 
@@ -20,8 +21,19 @@ def get_game_info(game: JsonDict) -> dict[str, Any] | None:
     if headers is None:
         print("Headers not found")
         return None
+    time_control = get_time_control(headers)
+    if time_control is None:
+        basetime = increment = None
+    elif "+" in time_control:
+        base_str, inc_str = time_control.split("+")
+        basetime = int(base_str)
+        increment = int(inc_str)
+    else:
+        basetime = int(time_control)
+        increment = 0
     return {
-        "time_control": get_time_control(headers),
+        "basetime" : basetime,
+        "increment": increment,
         "eco": get_opening(headers),
         "url": get_url(game)
     }
@@ -67,9 +79,9 @@ def build_game_from_chesscom(game: JsonDict) -> Game | None:
     return Game(
         white = white_user,
         black = black_user,
-        date = rating_info["date"],
-        time = rating_info["time"],
-        time_control = game_info["time_control"],
+        played_at = rating_info["datetime"],
+        basetime = game_info["basetime"],
+        increment = game_info["increment"],
         eco = game_info["eco"],
         url = None if game_info is None else game_info["url"],
         raw_pgn = game["pgn"],
