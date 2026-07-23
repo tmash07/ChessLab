@@ -83,7 +83,7 @@ def build_game_from_chesscom(game: JsonDict) -> Game | None:
         basetime = game_info["basetime"],
         increment = game_info["increment"],
         eco = game_info["eco"],
-        url = None if game_info is None else game_info["url"],
+        url = game_info["url"],
         raw_pgn = game["pgn"],
         rules = rules,
         rated = rated
@@ -107,7 +107,7 @@ def build_time_control_gamelist(username: str, basetime: str, increment: str) ->
     gamelist = build_gamelist_from_chesscom(raw_gamelist)
     return gamelist
 
-def build_monthly_gamelist(username: str, year: str, month: str):
+def build_monthly_gamelist(username: str, year: int, month: int):
     raw_gamelist = get_monthly_user_games(username, year, month)
     if raw_gamelist is None:
         return None

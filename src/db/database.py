@@ -2,8 +2,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import URL
 from dotenv import dotenv_values
+from pathlib import Path
 
-config = dotenv_values(".env")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+config = dotenv_values(PROJECT_ROOT / ".env")
 
 DATABASE_URL = URL.create(
     drivername="mysql+pymysql",

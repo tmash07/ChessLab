@@ -4,7 +4,7 @@ from datetime import datetime
 @dataclass
 class GamePlayer:
     username: str
-    rating: int
+    rating: int | None
     result: str | None
     accuracy: float | None
 
@@ -16,7 +16,7 @@ class Game:
     basetime: int
     increment: int
     eco: str | None
-    url: str | None
+    url: str
     raw_pgn: str
     rules: str
     rated: bool

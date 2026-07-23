@@ -10,7 +10,8 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Boolean,
-    CheckConstraint
+    CheckConstraint,
+    Float
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -93,11 +94,15 @@ class GamePlayerModel(Base):
     )
     rating: Mapped[int] = mapped_column(
         Integer,
-        nullable=False
+        nullable=True
     )
     result: Mapped[str] = mapped_column(
         String(20),
-        nullable=False
+        nullable=True
+    )
+    accuracy: Mapped[float] = mapped_column(
+        Float,
+        nullable=True
     )
     game: Mapped[GameModel] = relationship(
         back_populates="players"

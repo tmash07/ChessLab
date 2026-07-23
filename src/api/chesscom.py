@@ -51,10 +51,12 @@ def get_all_user_games(username: str) -> list[JsonDict] | None:
         games_list.extend(response.json()["games"])
     return games_list
 
-def get_monthly_user_games(username: str, year: str, month: str) -> list[JsonDict] | None:
-    url = f"https://api.chess.com/pub/player/{username}/games/{year}/{month}"
+def get_monthly_user_games(username: str, year: int, month: int) -> list[JsonDict] | None:
+    year_str = f"{year:04d}"
+    month_str = f"{month:02d}"
+    url = f"https://api.chess.com/pub/player/{username}/games/{year_str}/{month_str}"
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         api_error(response.status_code)
         return None
-    return response.json()
+    return response.json()["games"]
