@@ -1,6 +1,7 @@
 from models.game import Game
 from collections import Counter
 from data.chesscom_parser import build_time_control_gamelist, build_monthly_gamelist
+from models.enums import Color
 
 
 win_codes = ["win"]
@@ -15,7 +16,7 @@ def get_record(username: str, games_list: list[Game]) -> Counter[str]:
             continue
         if game.rules != "chess":
             continue
-        result = game.white.result if color == "white" else game.black.result 
+        result = game.white.result if color == Color.WHITE else game.black.result 
         if (result in win_codes):
             record["wins"] += 1
         elif (result in draw_codes):
@@ -26,13 +27,13 @@ def get_record(username: str, games_list: list[Game]) -> Counter[str]:
             print("Error: result code not recognized")
     return record
 
-def get_time_control_record(username: str, basetime: str, increment: str) -> Counter[str] | None:
+def get_time_control_record(username: str, basetime: int, increment: int) -> Counter[str] | None:
     gamelist = build_time_control_gamelist(username, basetime, increment)
     if gamelist is None:
         return None
     return get_record(username, gamelist)
 
-def get_monthly_record(username: str, year: str, month: str) -> Counter[str] | None:
+def get_monthly_record(username: str, year: int, month: int) -> Counter[str] | None:
     gamelist = build_monthly_gamelist(username, year, month)
     if gamelist is None:
         return None

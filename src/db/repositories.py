@@ -4,6 +4,7 @@ from models.scrape_target import ScrapeTarget
 from db.models import GameModel, GamePlayerModel, ScrapeTargetModel
 from sqlalchemy import select
 from datetime import datetime
+from models.enums import Color, ScrapeTargetType, TimeClass
 
 class GameRepository:
     def __init__(self, session_factory: sessionmaker) -> None:
@@ -68,14 +69,14 @@ class GameRepository:
     def _game_to_orm(self, game: Game) -> GameModel:
         white_player = GamePlayerModel(
             username=game.white.username,
-            color="white",
+            color=Color.WHITE.value,
             rating=game.white.rating,
             result=game.white.result,
             accuracy=game.white.accuracy
         )
         black_player = GamePlayerModel(
             username=game.black.username,
-            color="black",
+            color=Color.BLACK.value,
             rating=game.black.rating,
             result=game.black.result,
             accuracy=game.black.accuracy
@@ -86,6 +87,7 @@ class GameRepository:
             played_at=game.played_at,
             basetime=game.basetime,
             increment=game.increment,
+            time_class=game.time_class.value,
             eco=game.eco,
             rules=game.rules,
             rated=game.rated,
@@ -95,10 +97,10 @@ class GameRepository:
     
     def _orm_to_game(self, model: GameModel) -> Game:
         players_by_color = {player.color: player for player in model.players}
-        if "white" not in players_by_color or "black" not in players_by_color:
+        if Color.WHITE.value not in players_by_color or Color.BLACK.value not in players_by_color:
             raise ValueError("White or black player is missing from game")
-        white_model = players_by_color["white"]
-        black_model = players_by_color["black"]
+        white_model = players_by_color[Color.WHITE.value]
+        black_model = players_by_color[Color.BLACK.value]
         white_player = GamePlayer(
             username=white_model.username,
             rating=white_model.rating,
@@ -115,6 +117,7 @@ class GameRepository:
             white=white_player,
             black=black_player,
             played_at=model.played_at,
+            time_class=TimeClass(model.time_class),
             basetime=model.basetime,
             increment=model.increment,
             eco=model.eco,
@@ -133,17 +136,17 @@ class ScrapeTargetRepository:
         session.add(model) 
 
     def save_scrape_target(self, session: Session, scrape_target: ScrapeTarget) -> None:
-        if scrape_target.target_type == "monthly":
+        if scrape_target.target_type == ScrapeTargetType.MONTHLY:
             statement = select(ScrapeTargetModel).where(
                 ScrapeTargetModel.username == scrape_target.username,
-                ScrapeTargetModel.target_type == "monthly",
+                ScrapeTargetModel.target_type == ScrapeTargetType.MONTHLY.value,
                 ScrapeTargetModel.year == scrape_target.year,
                 ScrapeTargetModel.month == scrape_target.month,
         )
-        elif scrape_target.target_type == "time_control":
+        elif scrape_target.target_type == ScrapeTargetType.TIME_CONTROL:
             statement = select(ScrapeTargetModel).where(
                 ScrapeTargetModel.username == scrape_target.username,
-                ScrapeTargetModel.target_type == "time_control",
+                ScrapeTargetModel.target_type == ScrapeTargetType.TIME_CONTROL.value,
                 ScrapeTargetModel.basetime == scrape_target.basetime,
                 ScrapeTargetModel.increment == scrape_target.increment,
         )
@@ -162,7 +165,7 @@ class ScrapeTargetRepository:
     def get_monthly_scrape_target(self, username: str, year: int, month: int) -> ScrapeTarget | None:
         statement = select(ScrapeTargetModel).where(
             ScrapeTargetModel.username == username,
-            ScrapeTargetModel.target_type == "monthly",
+            ScrapeTargetModel.target_type == ScrapeTargetType.MONTHLY.value,
             ScrapeTargetModel.year == year,
             ScrapeTargetModel.month == month
         )
@@ -175,7 +178,7 @@ class ScrapeTargetRepository:
     def get_basetime_scrape_target(self, username: str, basetime: int, increment: int) -> ScrapeTarget | None:
         statement = select(ScrapeTargetModel).where(
             ScrapeTargetModel.username == username,
-            ScrapeTargetModel.target_type == "time_control",
+            ScrapeTargetModel.target_type == ScrapeTargetType.TIME_CONTROL.value,
             ScrapeTargetModel.basetime == basetime,
             ScrapeTargetModel.increment == increment
         )
@@ -189,7 +192,7 @@ class ScrapeTargetRepository:
     def _scrape_target_to_orm(self, scrape_target: ScrapeTarget) -> ScrapeTargetModel:
         return ScrapeTargetModel(
             username=scrape_target.username,
-            target_type=scrape_target.target_type,
+            target_type=scrape_target.target_type.value,
             year=scrape_target.year,
             month=scrape_target.month,
             basetime=scrape_target.basetime,
@@ -201,7 +204,7 @@ class ScrapeTargetRepository:
     def _orm_to_scrape_target(self, model: ScrapeTargetModel) -> ScrapeTarget:
         return ScrapeTarget(
             username=model.username,
-            target_type=model.target_type,
+            target_type=ScrapeTargetType(model.target_type),
             year=model.year,
             month=model.month,
             basetime=model.basetime,

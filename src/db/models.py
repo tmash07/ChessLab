@@ -14,6 +14,7 @@ from sqlalchemy import (
     Float
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from models.enums import TimeClass
 
 
 class GameModel(Base):
@@ -33,6 +34,10 @@ class GameModel(Base):
         DateTime,
         nullable=False
     )
+    time_class: Mapped[TimeClass] = mapped_column(
+        String(10),
+        nullable=False
+    )
     basetime: Mapped[int] = mapped_column(
         Integer,
         nullable=False
@@ -42,7 +47,7 @@ class GameModel(Base):
         nullable=False
     )
     eco: Mapped[str | None] = mapped_column(
-        String(5),
+        String(200),
         nullable=True
     ) 
     rules: Mapped[str] = mapped_column(
@@ -68,6 +73,11 @@ class GameModel(Base):
             "idx_games_time_control",
             "basetime",
             "increment"
+        ),
+        CheckConstraint(
+            """ 
+            time_class IN ('bullet', 'blitz', 'rapid')
+            """
         )
     )
 
@@ -118,6 +128,11 @@ class GamePlayerModel(Base):
             "idx_game_players_username",
             "username",
             "game_id"
+        ),
+        CheckConstraint(
+            """ 
+            color IN ('white', 'black')
+            """
         )
     )
 

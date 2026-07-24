@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from datetime import datetime
+from models.enums import ScrapeTargetType
 
 @dataclass
 class ScrapeTarget:
     username: str
-    target_type: str
+    target_type: ScrapeTargetType
     year: int | None
     month: int | None
     basetime: int | None
