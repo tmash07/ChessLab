@@ -10,6 +10,12 @@ class GamePlayer:
     accuracy: float | None
 
 @dataclass
+class GameOpening:
+    eco: str | None
+    opening_name: str
+    extended_moves: str | None
+
+@dataclass
 class Game:
     white: GamePlayer
     black: GamePlayer
@@ -17,7 +23,7 @@ class Game:
     time_class: TimeClass
     basetime: int
     increment: int
-    eco: str | None
+    opening: GameOpening
     url: str
     raw_pgn: str
     rules: str
@@ -35,3 +41,4 @@ class Game:
             return self.white
         elif color == Color.BLACK:
             return self.black
+        raise ValueError("Color not recognized")

@@ -1,16 +1,18 @@
 from api.chesscom import JsonDict
-from models.game import Game, GamePlayer
+from models.game import Game, GamePlayer, GameOpening
 from data.pgn import (
     get_headers_from_pgn, 
-    get_opening
 )
-from typing import Any
 from api.chesscom import get_time_control_history, get_monthly_user_games
 from models.enums import TimeClass
 from datetime import datetime, timezone
+import re
 
-def get_basetime_increment(game: JsonDict) -> dict[str, int]:
-    time_control = game["time_control"]
+def get_basetime_increment(game: JsonDict) -> dict[str, int] | None:
+    time_control = game.get("time_control")
+    # Regex expression ensures time_control is in format "a+b" for numbers a and b
+    if time_control is None or not bool(re.match(r"^d+(?\+\d+)?", time_control)):
+        return None
     if "+" in time_control:
         base_str, inc_str = time_control.split("+")
         basetime = int(base_str)
@@ -19,12 +21,38 @@ def get_basetime_increment(game: JsonDict) -> dict[str, int]:
         basetime = int(time_control)
         increment = 0
     return {"basetime" : basetime, "increment": increment}
+
+def get_opening(game: JsonDict) -> GameOpening | None:
+    url = game.get("eco")
+    if url is None:
+        return None
+    opening = url.rsplit("/", 1)[-1]
+    # Determine if opening starts with ECO code
+    eco_partition = opening.partition("-")
+    if bool(re.match(r"^[A-E][0-9]{2}$", eco_partition[0])):
+        eco = eco_partition[0]
+        opening = eco_partition[2]
+    else:
+        eco = None
+    # Separate opening name and extended movelist
+    split = re.search(r"\.\.\.|[0-9]\.", opening)
+    if split:
+        idx = split.start()
+        opening_name = opening[:idx]
+        extended_moves = opening[idx:]
+
+    else:
+        opening_name = opening
+        extended_moves = None
+    opening_name = opening_name.replace("-", " ")
+    return GameOpening(eco=eco, opening_name=opening_name, extended_moves=extended_moves)
     
 def build_game_from_chesscom(game: JsonDict) -> Game | None:
+
     # TODO: Log these missing info skips
     if game is None:
         return None
-    if game["rules"] != "chess" or game["time_class"] not in ["bullet", "blitz", "rapid"]:
+    if game.get("rules") != "chess" or game.get("time_class") not in ["bullet", "blitz", "rapid"]:
         return None
     pgn = game.get("pgn", None)
     if pgn is None:
@@ -32,33 +60,40 @@ def build_game_from_chesscom(game: JsonDict) -> Game | None:
     headers = get_headers_from_pgn(pgn)
     if headers is None:
         return None
-    time_control = get_basetime_increment(game)
-    accuracies = game.get("accuracies")
-    white_user = GamePlayer(
-        username = game["white"]["username"],
-        rating = game["white"]["rating"],
-        result = game["white"]["result"],
-        accuracy = None if accuracies is None else accuracies["white"]
-    )
-    black_user = GamePlayer(
-        username = game["black"]["username"],
-        rating = game["black"]["rating"],
-        result = game["black"]["result"],
-        accuracy = None if accuracies is None else accuracies["black"]
-    )
-    return Game(
-        white = white_user,
-        black = black_user,
-        played_at = datetime.fromtimestamp(game["end_time"], timezone.utc),
-        time_class = TimeClass(game["time_class"]),
-        basetime = time_control["basetime"],
-        increment = time_control["increment"],
-        eco = game.get("eco", None),
-        url = game["url"],
-        raw_pgn = game["pgn"],
-        rules = game["rules"],
-        rated = game["rated"]
-    )
+    try:
+        time_control = get_basetime_increment(game)
+        opening = get_opening(game)
+        if time_control is None or opening is None:
+            return None
+        accuracies = game.get("accuracies")
+        white_user = GamePlayer(
+            username = game["white"]["username"].strip().lower(),
+            rating = game["white"]["rating"],
+            result = game["white"]["result"],
+            accuracy = None if accuracies is None else accuracies["white"]
+        )
+        black_user = GamePlayer(
+            username = game["black"]["username"].strip().lower(),
+            rating = game["black"]["rating"],
+            result = game["black"]["result"],
+            accuracy = None if accuracies is None else accuracies["black"]
+        )
+        return Game(
+            white = white_user,
+            black = black_user,
+            played_at = datetime.fromtimestamp(game["end_time"], timezone.utc),
+            time_class = TimeClass(game["time_class"]),
+            basetime = time_control["basetime"],
+            increment = time_control["increment"],
+            opening = opening,
+            url = game["url"],
+            raw_pgn = game["pgn"],
+            rules = game["rules"],
+            rated = game["rated"]
+        )
+    except (KeyError, TypeError, ValueError) as e:
+        # TODO: Log skipped game
+        return None
 
 def build_gamelist_from_chesscom(raw_gamelist: list[JsonDict]) -> list[Game] | None:
     games = []

@@ -11,7 +11,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Boolean,
     CheckConstraint,
-    Float
+    Float,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.enums import TimeClass
@@ -46,10 +46,11 @@ class GameModel(Base):
         Integer,
         nullable=False
     )
-    eco: Mapped[str | None] = mapped_column(
-        String(200),
-        nullable=True
-    ) 
+    opening: Mapped["GameOpeningModel"] = relationship(
+        back_populates="game",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
     rules: Mapped[str] = mapped_column(
         String(20),
         nullable=False
@@ -133,6 +134,45 @@ class GamePlayerModel(Base):
             """ 
             color IN ('white', 'black')
             """
+        )
+    )
+
+class GameOpeningModel(Base):
+    __tablename__ = "game_openings"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True
+    )  
+    game_id: Mapped[int] = mapped_column(
+        ForeignKey("games.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    eco: Mapped[str | None] = mapped_column(
+        String(3),
+        nullable=True
+    )
+    opening_name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False
+    )
+    extended_moves: Mapped[str | None]= mapped_column(
+        String(100),
+        nullable=True
+    )
+    game: Mapped[GameModel] = relationship(
+        back_populates="opening"
+    ) 
+    __table_args__ = (
+        CheckConstraint(
+            """
+            eco IS NULL OR (eco >= 'A00' AND eco <= 'E99' AND CHAR_LENGTH(eco) = 3)
+            """
+        ),
+        UniqueConstraint(
+            "game_id",
+            name="uq_game_openings"
         )
     )
 

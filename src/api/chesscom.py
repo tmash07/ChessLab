@@ -28,16 +28,14 @@ def get_player_archives(username: str) -> list[str] | None:
     archives_url = "https://api.chess.com/pub/player/" + username + "/games/archives"
     archives_response = requests.get(archives_url, headers=headers)
     if archives_response.status_code == 200:
-        return archives_response.json()["archives"]
+        return archives_response.json().get("archives")
     else:
         raise ChessComApiError(f"Could not get player archives, API response code: {archives_response.status_code}")
 
 def get_all_user_games(username: str) -> list[JsonDict] | None:
     archives = get_player_archives(username)
-
     if archives is None:
-        print("Archives list not found")
-        return
+        return None
     
     games_list = []
     for link in archives:

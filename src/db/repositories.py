@@ -1,8 +1,8 @@
 from sqlalchemy.orm import sessionmaker, Session, selectinload
-from models.game import Game, GamePlayer
+from models.game import Game, GamePlayer, GameOpening
 from models.scrape_target import ScrapeTarget
-from db.models import GameModel, GamePlayerModel, ScrapeTargetModel
-from sqlalchemy import select
+from db.models import GameModel, GamePlayerModel, GameOpeningModel, ScrapeTargetModel
+from sqlalchemy import select, and_
 from datetime import datetime
 from models.enums import Color, ScrapeTargetType, TimeClass
 
@@ -25,7 +25,7 @@ class GameRepository:
         self.add_games(session, new_games)
 
 
-    def get_monthly_games(self, username: str, year: int, month: int) -> list[Game] | None:
+    def get_monthly_games(self, username: str, year: int, month: int) -> list[Game]:
         start_date = datetime(year, month, 1)
         if month == 12:
             end_date = datetime(year + 1, 1, 1)
@@ -39,17 +39,19 @@ class GameRepository:
             GameModel.played_at >= start_date,
             GameModel.played_at < end_date
         )
-        .options(selectinload(GameModel.players))
+        .options(
+            selectinload(GameModel.players),
+            selectinload(GameModel.opening)
+        )        
         .order_by(GameModel.played_at)
         )
         
         with self._session_factory() as session:
             models = session.scalars(statement).all()
-        if models is None: return None
 
         return [self._orm_to_game(model) for model in models]
     
-    def get_time_control_games(self, username: str, basetime: int, increment: int) -> list[Game] | None:
+    def get_time_control_games(self, username: str, basetime: int, increment: int) -> list[Game]:
         statement = (select(GameModel).where(
             GameModel.players.any(
                 GamePlayerModel.username == username
@@ -57,13 +59,55 @@ class GameRepository:
             GameModel.basetime == basetime,
             GameModel.increment == increment
         )
-        .options(selectinload(GameModel.players))
+        .options(
+            selectinload(GameModel.players),
+            selectinload(GameModel.opening)
+        )
+        .order_by(GameModel.played_at)
         )
         
         with self._session_factory() as session:
             models = session.scalars(statement).all()
-        if models is None: return None
 
+        return [self._orm_to_game(model) for model in models]
+    
+    def get_color_games(self, username: str, color: Color) -> list[Game]:
+        statement = (select(GameModel).where(
+            GameModel.players.any(
+                and_(
+                    GamePlayerModel.color == color.value,
+                    GamePlayerModel.username == username
+                )
+            )
+        )
+        .options(
+            selectinload(GameModel.players),
+            selectinload(GameModel.opening)
+        )
+        .order_by(GameModel.played_at)
+        )
+
+        with self._session_factory() as session:
+            models = session.scalars(statement).all()
+        
+        return [self._orm_to_game(model) for model in models]
+    
+    def get_all_games(self, username: str) -> list[Game]:
+        statement = (select(GameModel).where(
+            GameModel.players.any(
+                GamePlayerModel.username == username
+            )
+        )
+        .options(
+            selectinload(GameModel.players),
+            selectinload(GameModel.opening)
+        )        
+        .order_by(GameModel.played_at)
+        )
+
+        with self._session_factory() as session:
+            models = session.scalars(statement).all()
+        
         return [self._orm_to_game(model) for model in models]
     
     def _game_to_orm(self, game: Game) -> GameModel:
@@ -81,14 +125,18 @@ class GameRepository:
             result=game.black.result,
             accuracy=game.black.accuracy
         )
-
+        opening = GameOpeningModel(
+            eco=game.opening.eco,
+            opening_name=game.opening.opening_name,
+            extended_moves=game.opening.extended_moves
+        )
         return GameModel(
             url=game.url,
             played_at=game.played_at,
             basetime=game.basetime,
             increment=game.increment,
             time_class=game.time_class.value,
-            eco=game.eco,
+            opening=opening,
             rules=game.rules,
             rated=game.rated,
             raw_pgn=game.raw_pgn,
@@ -113,6 +161,11 @@ class GameRepository:
             result=black_model.result,
             accuracy=black_model.accuracy
         )
+        opening = GameOpening(
+            eco=model.opening.eco,
+            opening_name=model.opening.opening_name,
+            extended_moves=model.opening.extended_moves
+        )
         return Game(
             white=white_player,
             black=black_player,
@@ -120,7 +173,7 @@ class GameRepository:
             time_class=TimeClass(model.time_class),
             basetime=model.basetime,
             increment=model.increment,
-            eco=model.eco,
+            opening=opening,
             url=model.url,
             raw_pgn=model.raw_pgn,
             rules=model.rules,
