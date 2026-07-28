@@ -13,3 +13,7 @@ class TimeClass(StrEnum):
     BLITZ = "blitz"
     RAPID = "rapid"
 
+class GameResult(StrEnum):
+    WIN = "win"
+    DRAW = "draw"
+    LOSS = "loss"

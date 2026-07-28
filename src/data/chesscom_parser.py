@@ -40,11 +40,10 @@ def get_opening(game: JsonDict) -> GameOpening | None:
         idx = split.start()
         opening_name = opening[:idx]
         extended_moves = opening[idx:]
-
     else:
         opening_name = opening
         extended_moves = None
-    opening_name = opening_name.replace("-", " ")
+    opening_name = opening_name.rstrip("-").replace("-", " ")
     return GameOpening(eco=eco, opening_name=opening_name, extended_moves=extended_moves)
     
 def build_game_from_chesscom(game: JsonDict) -> Game | None:
