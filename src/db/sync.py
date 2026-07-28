@@ -3,7 +3,7 @@ from .repositories import GameRepository, ScrapeTargetRepository
 from models.scrape_target import ScrapeTarget
 from models.game import Game
 from data.chesscom_parser import build_monthly_gamelist, build_time_control_gamelist
-from api.chesscom import get_player_archives
+from integrations.chesscom import get_player_archives
 from datetime import datetime
 from models.enums import ScrapeTargetType
 
@@ -15,7 +15,7 @@ class SyncService:
         self._game_repository = game_repository
         self._scrape_target_repository = scrape_target_repository
     
-    def sync_monthly_games(self, username: str, year: int, month: int) -> list[Game] | None:
+    def sync_monthly_games(self, username: str, year: int, month: int) -> list[Game]:
         username = self._normalize_and_validate_username(username)
         self._validate_monthly_args(year, month)
 
@@ -24,7 +24,7 @@ class SyncService:
             games = build_monthly_gamelist(username, year, month)
             with self._session_factory.begin() as session:
                 if games is None:
-                    return
+                    return []
                 scrape_target = ScrapeTarget(
                     username=username,
                     target_type=ScrapeTargetType.MONTHLY,
@@ -40,7 +40,7 @@ class SyncService:
             
         return self._game_repository.get_monthly_games(username, year, month)
     
-    def sync_time_control_games(self, username: str, basetime: int, increment: int) -> list[Game] | None:
+    def sync_time_control_games(self, username: str, basetime: int, increment: int) -> list[Game]:
         username = self._normalize_and_validate_username(username)
         self._validate_time_control_args(basetime, increment)
 
@@ -49,7 +49,7 @@ class SyncService:
             games = build_time_control_gamelist(username, basetime, increment)
             with self._session_factory.begin() as session:
                 if games is None:
-                    return
+                    return []
                 scrape_target = ScrapeTarget(
                     username=username,
                     target_type=ScrapeTargetType.TIME_CONTROL,

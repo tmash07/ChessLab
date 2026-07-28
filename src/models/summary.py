@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from models.enums import GameResult
+from dataclasses import dataclass, fields
+from models.enums import GameResult, Color, TimeClass
 
 @dataclass
 class Record:
@@ -43,7 +43,7 @@ class NumericSummary:
     average: float | None = None
     total: float = 0
 
-    def add_entry(self, entry: float | None) -> None:
+    def add_entry(self, entry: int | float | None) -> None:
         self.count += 1
         if entry is None:
             self.missing += 1
@@ -53,3 +53,39 @@ class NumericSummary:
             self.total += entry
             self.average = self.total / (self.count - self.missing)
 
+@dataclass(frozen=True)
+class PerformanceReport:
+    record: Record
+    player_rating: NumericSummary
+    opponent_rating: NumericSummary
+    rating_difference: NumericSummary
+    player_accuracy: NumericSummary
+    opponent_accuracy: NumericSummary
+    total_games: int
+
+    def report_fields(self) -> dict:
+        return {
+        field.name: getattr(self, field.name)
+        for field in fields(type(self))
+        }
+
+@dataclass(frozen=True)
+class ColorReport(PerformanceReport):
+    color: Color
+
+@dataclass(frozen=True)
+class TimeClassReport(PerformanceReport):
+    time_class: TimeClass
+
+@dataclass(frozen=True)
+class OpeningReport(ColorReport):
+    opening_name: str
+
+@dataclass
+class Report:
+    username: str
+    overall: PerformanceReport
+    by_color: list[ColorReport]
+    by_time_class: list[TimeClassReport]
+    by_opening: list[OpeningReport]
+    longest_win_streak: int

@@ -8,6 +8,8 @@ headers = {
 
 JsonDict = dict[str, Any]
 
+# TODO: timeout api requests that go on for too long
+
 def get_player_info(username: str) -> JsonDict:
     url = "https://api.chess.com/pub/player/" + username + "/stats"
     response = requests.get(url, headers=headers)

@@ -71,6 +71,25 @@ class GameRepository:
 
         return [self._orm_to_game(model) for model in models]
     
+    def get_time_class_games(self, username: str, time_class: TimeClass) -> list[Game]:
+        statement = (select(GameModel).where(
+            GameModel.players.any(
+                GamePlayerModel.username == username
+            ),
+            GameModel.time_class == time_class.value
+        )
+        .options(
+            selectinload(GameModel.players),
+            selectinload(GameModel.opening)
+        )
+        .order_by(GameModel.played_at)
+        )
+        
+        with self._session_factory() as session:
+            models = session.scalars(statement).all()
+
+        return [self._orm_to_game(model) for model in models]
+    
     def get_color_games(self, username: str, color: Color) -> list[Game]:
         statement = (select(GameModel).where(
             GameModel.players.any(

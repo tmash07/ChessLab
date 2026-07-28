@@ -2,6 +2,7 @@ from models.game import Game
 from models.summary import Record, NumericSummary
 from models.enums import GameResult
 from collections import Counter
+from collections.abc import Iterable
     
 def get_record(user: str, games: list[Game]) -> Record:
     record = Record()
@@ -26,20 +27,6 @@ def get_opponent_ratings(user: str, games: list[Game]) -> list[int]:
         if opponent is not None:
             ratings.append(opponent.rating)
     return ratings
-
-def get_rating_statistics(user: str, games: list[Game]) -> NumericSummary:
-    ratings = get_ratings(user, games)
-    summary = NumericSummary()
-    for rating in ratings:
-        summary.add_entry(rating)
-    return summary
-
-def get_opponent_rating_statistics(user: str, games: list[Game]) -> NumericSummary:
-    ratings = get_opponent_ratings(user, games)
-    summary = NumericSummary()
-    for rating in ratings:
-        summary.add_entry(rating)
-    return summary
 
 def get_rating_differences(user: str, games: list[Game]) -> list[int]:
     differences = []
@@ -72,37 +59,21 @@ def count_opponent_results(user: str, games: list[Game]) -> Counter[str]:
             counter[opponent.result] += 1
     return counter
 
-def get_accuracies(user: str, games: list[Game]) -> list[float]:
+def get_accuracies(user: str, games: list[Game]) -> list[float | None]:
     accuracies = []
-    for game in games:
-        player = game.get_user_player(user)
-        if player is not None and player.accuracy is not None:
-            accuracies.append(player.accuracy)
-    return accuracies
-
-def get_opponent_accuracies(user: str, games: list[Game]) -> list[float]:
-    accuracies = []
-    for game in games:
-        opponent = game.get_opponent_player(user)
-        if opponent is not None and opponent.accuracy is not None:
-            accuracies.append(opponent.accuracy)
-    return accuracies
-
-def get_accuracy_statistics(user: str, games: list[Game]) -> NumericSummary:
-    summary = NumericSummary()
     for game in games:
         player = game.get_user_player(user)
         if player is not None:
-            summary.add_entry(player.accuracy)
-    return summary
+            accuracies.append(player.accuracy)
+    return accuracies
 
-def get_opponent_accuracy_statistics(user: str, games: list[Game]) -> NumericSummary:
-    summary = NumericSummary()
+def get_opponent_accuracies(user: str, games: list[Game]) -> list[float | None]:
+    accuracies = []
     for game in games:
         opponent = game.get_opponent_player(user)
         if opponent is not None:
-            summary.add_entry(opponent.accuracy)
-    return summary  
+            accuracies.append(opponent.accuracy)
+    return accuracies
 
 def find_longest_win_streak(user: str, games: list[Game]) -> int:
     streak = 0
@@ -115,6 +86,12 @@ def find_longest_win_streak(user: str, games: list[Game]) -> int:
         elif result is not None:
             current = 0
     return streak
+
+def build_numeric_summary(entries: Iterable[int | float | None]) -> NumericSummary:
+    summary = NumericSummary()
+    for entry in entries:
+        summary.add_entry(entry)
+    return summary
 
 
 

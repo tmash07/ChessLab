@@ -1,9 +1,8 @@
-from api.chesscom import JsonDict
 from models.game import Game, GamePlayer, GameOpening
 from data.pgn import (
     get_headers_from_pgn, 
 )
-from api.chesscom import get_time_control_history, get_monthly_user_games
+from integrations.chesscom import get_time_control_history, get_monthly_user_games, JsonDict
 from models.enums import TimeClass
 from datetime import datetime, timezone
 import re
@@ -11,7 +10,7 @@ import re
 def get_basetime_increment(game: JsonDict) -> dict[str, int] | None:
     time_control = game.get("time_control")
     # Regex expression ensures time_control is in format "a+b" for numbers a and b
-    if time_control is None or not bool(re.match(r"^d+(?\+\d+)?", time_control)):
+    if time_control is None or not str or not bool(re.fullmatch(r"\d+(\+\d+)?", time_control)):
         return None
     if "+" in time_control:
         base_str, inc_str = time_control.split("+")

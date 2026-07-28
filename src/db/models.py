@@ -49,7 +49,8 @@ class GameModel(Base):
     opening: Mapped["GameOpeningModel"] = relationship(
         back_populates="game",
         uselist=False,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        single_parent=True
     )
     rules: Mapped[str] = mapped_column(
         String(20),
@@ -105,11 +106,11 @@ class GamePlayerModel(Base):
     )
     rating: Mapped[int] = mapped_column(
         Integer,
-        nullable=True
+        nullable=False
     )
     result: Mapped[str] = mapped_column(
         String(20),
-        nullable=True
+        nullable=False
     )
     accuracy: Mapped[float] = mapped_column(
         Float,
