@@ -37,28 +37,6 @@ def get_rating_differences(user: str, games: list[Game]) -> list[int]:
             differences.append(player.rating - opponent.rating)
     return differences
 
-def count_openings(games: list[Game]) -> Counter[str]:
-    counter = Counter()
-    for game in games:
-        counter[game.opening.opening_name] += 1
-    return counter
-
-def count_results(user: str, games: list[Game]) -> Counter[str]:
-    counter = Counter()
-    for game in games:
-        player = game.get_user_player(user)
-        if player is not None:
-            counter[player.result] += 1
-    return counter
-
-def count_opponent_results(user: str, games: list[Game]) -> Counter[str]:
-    counter = Counter()
-    for game in games:
-        opponent = game.get_opponent_player(user)
-        if opponent is not None:
-            counter[opponent.result] += 1
-    return counter
-
 def get_accuracies(user: str, games: list[Game]) -> list[float | None]:
     accuracies = []
     for game in games:
@@ -93,5 +71,25 @@ def build_numeric_summary(entries: Iterable[int | float | None]) -> NumericSumma
         summary.add_entry(entry)
     return summary
 
+def count_openings(games: list[Game]) -> Counter[str]:
+    counter = Counter()
+    for game in games:
+        counter[game.opening.opening_name] += 1
+    return counter
 
+def count_results(user: str, games: list[Game]) -> Counter[str]:
+    counter = Counter()
+    for game in games:
+        player = game.get_user_player(user)
+        if player is not None:
+            counter[player.result] += 1
+    return counter
+
+def count_opponent_results(user: str, games: list[Game]) -> Counter[str]:
+    counter = Counter()
+    for game in games:
+        opponent = game.get_opponent_player(user)
+        if opponent is not None:
+            counter[opponent.result] += 1
+    return counter
 

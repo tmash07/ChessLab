@@ -3,9 +3,9 @@ from models.game import Game, GamePlayer, GameOpening
 from models.scrape_target import ScrapeTarget
 from db.models import GameModel, GamePlayerModel, GameOpeningModel, ScrapeTargetModel
 from sqlalchemy import select, and_
-from datetime import datetime
+from datetime import datetime, timezone
 from models.enums import Color, ScrapeTargetType, TimeClass
-
+ 
 class GameRepository:
     def __init__(self, session_factory: sessionmaker) -> None:
         self._session_factory = session_factory
@@ -188,7 +188,7 @@ class GameRepository:
         return Game(
             white=white_player,
             black=black_player,
-            played_at=model.played_at,
+            played_at=model.played_at.replace(tzinfo=timezone.utc),
             time_class=TimeClass(model.time_class),
             basetime=model.basetime,
             increment=model.increment,
@@ -281,6 +281,6 @@ class ScrapeTargetRepository:
             month=model.month,
             basetime=model.basetime,
             increment=model.increment,
-            last_successful_at=model.last_successful_at,
+            last_successful_at=model.last_successful_at.replace(tzinfo=timezone.utc),
             is_complete=model.is_complete
         )

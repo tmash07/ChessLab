@@ -9,8 +9,7 @@ import re
 
 def get_basetime_increment(game: JsonDict) -> dict[str, int] | None:
     time_control = game.get("time_control")
-    # Regex expression ensures time_control is in format "a+b" for numbers a and b
-    if time_control is None or not str or not bool(re.fullmatch(r"\d+(\+\d+)?", time_control)):
+    if time_control is None or not isinstance(time_control, str) or not bool(re.fullmatch(r"\d+(\+\d+)?", time_control)):
         return None
     if "+" in time_control:
         base_str, inc_str = time_control.split("+")
@@ -23,7 +22,7 @@ def get_basetime_increment(game: JsonDict) -> dict[str, int] | None:
 
 def get_opening(game: JsonDict) -> GameOpening | None:
     url = game.get("eco")
-    if url is None:
+    if url is None or not url.startswith("https://www.chess.com/openings/"):
         return None
     opening = url.rsplit("/", 1)[-1]
     # Determine if opening starts with ECO code
